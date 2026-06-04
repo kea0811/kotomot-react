@@ -11,8 +11,6 @@ interface KotoDB extends DBSchema {
 const DB_NAME = 'koto-translations';
 const DB_VERSION = 3;
 const STORE_NAME = 'translations';
-const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
-
 class TranslationStorage {
   private db: IDBPDatabase<KotoDB> | null = null;
 
@@ -35,22 +33,17 @@ class TranslationStorage {
 
     try {
       const stored = await this.db.get(STORE_NAME, locale);
-      
       if (!stored) return null;
-      
-      // Check if cache is still valid
-      const now = Date.now();
-      if (now - stored.timestamp > CACHE_DURATION) {
-        // Cache expired
-        await this.db.delete(STORE_NAME, locale);
-        return null;
-      }
-      
       return stored;
     } catch (error) {
       console.error('Error getting translations from IndexedDB:', error);
       return null;
     }
+  }
+
+  async getVersion(locale: string): Promise<string | undefined> {
+    const stored = await this.getTranslations(locale);
+    return stored?.version;
   }
 
   async setTranslations(locale: string, translations: TranslationData, apiResponse?: ApiResponse): Promise<void> {

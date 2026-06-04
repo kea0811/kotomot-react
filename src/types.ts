@@ -23,7 +23,10 @@ export interface KotoContextValue {
   loading: boolean;
   error: Error | null;
   t: (key: string, fallback?: string) => string;
+  ti: (key: string, params: Record<string, string | number>, fallback?: string) => string;
+  tp: (key: string, count: number, params?: Record<string, string | number>) => string;
   setLocale: (locale: string) => void;
+  refresh: () => Promise<void>;
   availableLocales: LocaleInfo[];
   getAvailableLocales: () => LocaleInfo[];
 }

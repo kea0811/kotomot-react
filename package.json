@@ -1,6 +1,6 @@
 {
-  "name": "koto-react",
-  "version": "1.0.0",
+  "name": "kotomot-react",
+  "version": "1.2.0",
   "description": "Koto - React translation library with IndexedDB caching",
   "type": "module",
   "main": "dist/index.js",

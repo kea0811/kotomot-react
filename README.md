@@ -1,15 +1,15 @@
-# Koto React
+# Kotomot React
 
-> **Koto** (言) — Japanese for "word." Every translation starts with a single word. Koto bridges languages one word at a time.
+> **Kotomot** — *koto* (言, Japanese for "word") + *mot* (French for "word"). Words meeting words: that is translation.
 
 A React translation library with IndexedDB caching for optimal performance.
 
 ## Installation
 
 ```bash
-npm install koto-react
+npm install kotomot-react
 # or
-yarn add koto-react
+yarn add kotomot-react
 ```
 
 ## Usage
@@ -18,14 +18,15 @@ yarn add koto-react
 
 ```tsx
 import React from 'react';
-import { KotoProvider } from 'koto-react';
+import { KotoProvider } from 'kotomot-react';
 
 function App() {
   return (
     <KotoProvider
       apiKey="your-api-key"
+      projectId="your-project-id"      // your project slug or ID
       defaultLocale="en"
-      apiUrl="https://your-api-endpoint.com/translations" // optional
+      apiUrl="https://api.kotomot.app" // optional — defaults to Kotomot (full /v1/translations endpoint also accepted)
     >
       <YourApp />
     </KotoProvider>
@@ -37,7 +38,7 @@ function App() {
 
 ```tsx
 import React from 'react';
-import { useTranslation } from 'koto-react';
+import { useTranslation } from 'kotomot-react';
 
 function MyComponent() {
   const { t, locale, loading } = useTranslation();
@@ -61,7 +62,7 @@ function MyComponent() {
 For non-React contexts or utility functions:
 
 ```typescript
-import { t, initTranslations } from 'koto-react';
+import { t, initTranslations } from 'kotomot-react';
 
 // Initialize once in your app
 await initTranslations('en');
@@ -75,7 +76,7 @@ const withFallback = t('some.missing.key', 'Fallback text'); // Returns 'Fallbac
 ### Translation with Interpolation
 
 ```typescript
-import { ti } from 'koto-react';
+import { ti } from 'kotomot-react';
 
 // If translation is: "Hello, {{name}}! You have {{count}} items."
 const message = ti('greeting.message', {
@@ -88,7 +89,7 @@ const message = ti('greeting.message', {
 ### Pluralization
 
 ```typescript
-import { tp } from 'koto-react';
+import { tp } from 'kotomot-react';
 
 // Translations:
 // "items.zero": "No items"
@@ -116,9 +117,10 @@ tp('items', 5);  // "5 items"
 The main provider component that manages translations.
 
 **Props:**
-- `apiKey` (string, required): Your API key for fetching translations
-- `defaultLocale` (string, required): The default locale to use
-- `apiUrl` (string, optional): Custom API endpoint URL
+- `apiKey` (string, required): Your project's API key for fetching translations
+- `projectId` (string, required): Your project's slug or ID (find it on the project page in Kotomot)
+- `defaultLocale` (string, required): The default locale to use (e.g. `"en"`)
+- `apiUrl` (string, optional): API host or full endpoint. Defaults to `https://api.kotomot.app`. Pass just the host (the SDK appends `/v1/translations`) or the full endpoint — both work. Self-hosters pass their own domain.
 - `children` (ReactNode, required): Your app components
 
 ### useTranslation()
