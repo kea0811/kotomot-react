@@ -7,6 +7,14 @@ export interface KotoConfig {
   projectId: string;
   defaultLocale: string;
   apiUrl?: string;
+  /**
+   * Translations fetched on the server (e.g. via kotomot-node-sdk) used to
+   * render immediately — enables SSR with no flash or hydration mismatch.
+   * The client revalidates by version in the background.
+   */
+  initialTranslations?: TranslationData;
+  /** The locale `initialTranslations` was fetched for (defaults to defaultLocale). */
+  initialLocale?: string;
 }
 
 export interface LocaleInfo {

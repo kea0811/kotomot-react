@@ -16,6 +16,9 @@ class TranslationStorage {
 
   async init(): Promise<void> {
     if (this.db) return;
+    // SSR / non-browser: no IndexedDB. Leave db null so every method no-ops
+    // (callers already guard `if (!this.db)`), keeping the SDK server-safe.
+    if (typeof indexedDB === 'undefined') return;
 
     this.db = await openDB<KotoDB>(DB_NAME, DB_VERSION, {
       upgrade(db) {

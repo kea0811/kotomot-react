@@ -61,6 +61,36 @@ function MyComponent() {
 }
 ```
 
+### Server-side rendering (Next.js / Remix)
+
+Fetch translations on the server with [`kotomot-node-sdk`](https://www.npmjs.com/package/kotomot-node-sdk) and pass them to the provider via `initialTranslations` — the markup is translated in the server response (no flash, no hydration mismatch), and the client revalidates by version in the background.
+
+```tsx
+// Next.js App Router — a Server Component
+import { KotoClient } from 'kotomot-node-sdk';
+import { KotoProvider } from 'kotomot-react';
+
+export default async function Layout({ children }: { children: React.ReactNode }) {
+  const locale = 'en'; // from the request / route
+  const koto = new KotoClient({ apiKey: process.env.KOTOMOT_API_KEY! });
+  const initialTranslations = await koto.getTranslations('your-project', { locale });
+
+  return (
+    <KotoProvider
+      apiKey={process.env.NEXT_PUBLIC_KOTOMOT_KEY!}
+      projectId="your-project"
+      defaultLocale={locale}
+      initialLocale={locale}
+      initialTranslations={initialTranslations}
+    >
+      {children}
+    </KotoProvider>
+  );
+}
+```
+
+The SDK is SSR-safe: IndexedDB/localStorage are only touched in the browser, so it renders cleanly on the server.
+
 ### Using the Standalone Translation Function
 
 For non-React contexts or utility functions:

@@ -24,10 +24,17 @@ export function KotoProvider({
   apiKey,
   projectId,
   defaultLocale,
-  apiUrl = 'https://api.kotomot.app'
+  apiUrl = 'https://api.kotomot.app',
+  initialTranslations,
+  initialLocale
 }: KotoProviderProps) {
-  // Initialize locale from localStorage or use defaultLocale
+  const hasInitial = !!initialTranslations && Object.keys(initialTranslations).length > 0;
+
+  // Initialize locale. When seeded from the server, the locale must match what
+  // the server rendered (deterministic) to avoid a hydration mismatch; only
+  // fall back to the persisted choice for client-only apps.
   const getInitialLocale = () => {
+    if (hasInitial) return initialLocale || defaultLocale;
     if (typeof window !== 'undefined') {
       const savedLocale = localStorage.getItem(LOCALE_STORAGE_KEY);
       if (savedLocale) {
@@ -37,11 +44,15 @@ export function KotoProvider({
     return defaultLocale;
   };
 
-  const [translations, setTranslations] = useState<TranslationData>({});
+  const [translations, setTranslations] = useState<TranslationData>(initialTranslations || {});
   const [locale, setLocale] = useState(getInitialLocale());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!hasInitial);
   const [error, setError] = useState<Error | null>(null);
   const availableLocales = AVAILABLE_LOCALES;
+
+  // Whether content is on screen (seeded or loaded). Keeps background
+  // revalidation from flashing a loading state or blanking the UI.
+  const hadContentRef = useRef<boolean>(hasInitial);
 
   // Stabilize config in a ref to avoid re-triggering effects on prop changes
   const configRef = useRef({ apiKey, projectId, apiUrl });
@@ -102,6 +113,21 @@ export function KotoProvider({
     }
     loadedLocalesRef.current.add(currentLocale);
 
+    // Already have content (server-seeded or previously loaded): keep it on
+    // screen and just revalidate by version in the background — no loading flash.
+    if (hadContentRef.current) {
+      try {
+        const needsUpdate = await checkVersion();
+        if (needsUpdate) {
+          const freshTranslations = await fetchTranslations(currentLocale);
+          setTranslations(freshTranslations);
+        }
+      } catch {
+        loadedLocalesRef.current.delete(currentLocale);
+      }
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -112,6 +138,7 @@ export function KotoProvider({
       if (cached) {
         // Cache exists — use it immediately
         setTranslations(cached.translations);
+        hadContentRef.current = true;
         setLoading(false);
 
         // Then check version in background — refetch if stale
@@ -124,6 +151,7 @@ export function KotoProvider({
         // No cache, fetch from API
         const freshTranslations = await fetchTranslations(currentLocale);
         setTranslations(freshTranslations);
+        hadContentRef.current = true;
         setLoading(false);
       }
     } catch (err) {
@@ -220,8 +248,10 @@ export function KotoProvider({
     return () => clearTimeout(timer);
   }, []);
 
-  // Don't render children until translations are loaded, but allow after timeout
-  if (loading && !timedOut) {
+  // Block first paint only when there's nothing to show yet (client-only, no
+  // cache). With server-seeded/cached content we render immediately — which is
+  // what makes SSR work without a flash.
+  if (loading && !timedOut && Object.keys(translations).length === 0) {
     return null;
   }
 
